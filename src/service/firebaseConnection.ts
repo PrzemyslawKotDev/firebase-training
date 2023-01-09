@@ -1,6 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { getFirestore, collection } from 'firebase/firestore'
-// ... other firebase imports
+import { useFirestore } from 'vuefire'
 
 export const firebaseApp = initializeApp({
     apiKey: "AIzaSyAIImtjAzaOqLyjk6SrDdGunIslV4Bf0II",
@@ -11,8 +10,4 @@ export const firebaseApp = initializeApp({
     appId: "1:410989675705:web:0dbc96450b56a0be14c768"
 })
 
-// used for the firestore refs
-const db = getFirestore(firebaseApp)
-
-// here we can export reusable database references
-export const todosRef = collection(db, 'todos')
+export const db = useFirestore()

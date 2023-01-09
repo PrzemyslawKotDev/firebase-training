@@ -6,6 +6,7 @@ import { RouterLink, RouterView } from "vue-router";
   <div class="container">
     <nav>
       <RouterLink class="link" to="/">Show data</RouterLink>
+      <RouterLink class="link" to="/addtodo">Add ToDo</RouterLink>
     </nav>
     <RouterView />
   </div>
