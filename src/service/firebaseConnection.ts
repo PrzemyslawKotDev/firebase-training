@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app'
 import { useFirestore } from 'vuefire'
 import { getStorage } from "firebase/storage";
+import { getAuth } from "firebase/auth";
 
 export const firebaseApp = initializeApp({
     apiKey: "AIzaSyAIImtjAzaOqLyjk6SrDdGunIslV4Bf0II",
@@ -13,3 +14,4 @@ export const firebaseApp = initializeApp({
 
 export const db = useFirestore()
 export const storage = getStorage(firebaseApp);
+export const auth = getAuth(firebaseApp);

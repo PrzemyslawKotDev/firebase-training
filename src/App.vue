@@ -1,13 +1,24 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from "vue-router";
+import { signOut } from "firebase/auth";
+import { auth } from "@/service/firebaseConnection";
+
+function logout() {
+  signOut(auth)
+    .then(() => {})
+    .catch((error) => {
+      alert(`ERROR WHILE LOGGING OUT: ${error}`);
+    });
+}
 </script>
 
 <template>
   <div class="container">
     <nav>
-      <RouterLink class="link" to="/">Show data</RouterLink>
+      <RouterLink class="link" to="/home">Show data</RouterLink>
       <RouterLink class="link" to="/addtodo">Add todo</RouterLink>
       <RouterLink class="link" to="/images">Images</RouterLink>
+      <RouterLink class="link" to="/" @click="logout">Logout</RouterLink>
     </nav>
     <RouterView />
   </div>

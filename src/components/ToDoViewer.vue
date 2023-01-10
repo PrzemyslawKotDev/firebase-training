@@ -19,7 +19,9 @@
         </div>
       </div>
     </div>
-    <button class="delete" @click="deleteToDo(data.id)">+</button>
+    <button class="delete" @click="deleteToDo(data.id, data.imageName)">
+      +
+    </button>
   </div>
 </template>
 
