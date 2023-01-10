@@ -1,17 +1,22 @@
 <template>
   <div :class="{ 'is-done': isChecked }" class="todo-bar">
-    <div class="title">{{ data.id }}</div>
-    <div class="description">
-      {{ data.todo }}
+    <div class="image">
+      <ImageDisplay :image-name="data.imageName" />
     </div>
-    <div class="todo-state">
-      <label class="checkbox-label">Check if is done </label>
-      <div
-        :class="{ 'is-checked': isChecked }"
-        class="checkbox"
-        @click="changeDoneState"
-      >
-        <div v-if="isChecked" class="bird"></div>
+    <div class="info">
+      <div class="title">{{ data.id }}</div>
+      <div class="description">
+        {{ data.todo }}
+      </div>
+      <div class="todo-state">
+        <label class="checkbox-label">Check if is done </label>
+        <div
+          :class="{ 'is-checked': isChecked }"
+          class="checkbox"
+          @click="changeDoneState"
+        >
+          <div v-if="isChecked" class="bird"></div>
+        </div>
       </div>
     </div>
     <button class="delete" @click="deleteToDo(data.id)">+</button>
@@ -24,17 +29,22 @@ import { useDebounceFn } from "@vueuse/core";
 import { ref } from "vue";
 import handleToDo from "@/service/handleTodo";
 import deleteToDo from "@/service/deleteToDo";
+import ImageDisplay from "./ImageDisplay.vue";
 
 type PropsType = {
   data: DocumentData;
 };
-
 const props = defineProps<PropsType>();
 const isChecked = ref(props.data.isDone);
 
 //nie wiem czy to dobry pomysł dawac tu debounce, z jednej strony ograniczy traffic z drugiej mogą być bugi
 const debouncedIsDoneSave = useDebounceFn(() => {
-  handleToDo(props.data.id, props.data.todo, isChecked.value);
+  handleToDo(
+    props.data.id,
+    props.data.todo,
+    isChecked.value,
+    props.data.imageName
+  );
 }, 1000);
 
 function changeDoneState() {
@@ -49,7 +59,16 @@ function changeDoneState() {
   padding: 10px;
   margin: 15px 0;
   border: 2px solid cornflowerblue;
+  display: flex;
+  align-items: center;
 }
+.image {
+  height: 150px;
+  aspect-ratio: 1/1;
+  border: 1px solid black;
+  margin-right: 10px;
+}
+
 .title {
   font-size: 30px;
 }
