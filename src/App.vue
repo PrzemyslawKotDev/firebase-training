@@ -6,6 +6,8 @@ import { RouterLink, RouterView } from "vue-router";
   <div class="container">
     <nav>
       <RouterLink class="link" to="/">Show data</RouterLink>
+      <RouterLink class="link" to="/addtodo">Add todo</RouterLink>
+      <RouterLink class="link" to="/images">Images</RouterLink>
     </nav>
     <RouterView />
   </div>
@@ -19,6 +21,11 @@ import { RouterLink, RouterView } from "vue-router";
   @media screen and (max-width: 768px) {
     padding: 5px;
   }
+}
+nav {
+  width: 100%;
+  text-align: center;
+  padding-bottom: 30px;
 }
 .link {
   font-size: 24px;
