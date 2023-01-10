@@ -15,6 +15,7 @@ type PropsType = {
 const props = defineProps<PropsType>();
 const itemImage = ref();
 const imageUrl = getDownloadURL(getFileRef("images", props.imageName));
+
 imageUrl.then((item) => {
   itemImage.value.setAttribute("src", item);
 });
