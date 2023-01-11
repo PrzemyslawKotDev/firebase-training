@@ -37,9 +37,8 @@ function signin() {
   if (password.value === password2.value) {
     createUserWithEmailAndPassword(auth, email.value, password.value)
       .then((userCredential) => {
-        // Signed in
         const user = userCredential.user;
-        router.push("/home");
+        router.push({ name: "home" });
         emit("close");
       })
       .catch((error) => {

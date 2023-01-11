@@ -3,6 +3,11 @@ import { RouterLink, RouterView } from "vue-router";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/service/firebaseConnection";
 import { ref } from "vue";
+import router from "./router";
+
+// vuequery
+// warianty todos dla pracy, zakupy, relax
+// list >> typ todosów >> to do lub produkt do kupienia itp
 
 const isLogged = ref(false);
 
@@ -20,6 +25,8 @@ onAuthStateChanged(auth, (user) => {
   if (user) {
     isLogged.value = true;
     const uid = user.uid;
+  } else {
+    router.push({ name: "login" });
   }
 });
 </script>
@@ -27,10 +34,9 @@ onAuthStateChanged(auth, (user) => {
 <template>
   <div class="container">
     <nav v-if="isLogged">
-      <RouterLink class="link" to="/home">Show data</RouterLink>
-      <RouterLink class="link" to="/addtodo">Add todo</RouterLink>
-      <RouterLink class="link" to="/images">Images</RouterLink>
-      <RouterLink class="link" to="/" @click="logout">Logout</RouterLink>
+      <RouterLink class="link" :to="{ name: 'home' }">Show data</RouterLink>
+      <RouterLink class="link" :to="{ name: 'addtodo' }">Add todo</RouterLink>
+      <button class="link" @click="logout">Logout</button>
     </nav>
     <RouterView />
   </div>
@@ -57,6 +63,8 @@ nav {
   color: black;
   padding: 5px 10px;
   border-right: 2px solid black;
+  background-color: transparent;
+  text-transform: uppercase;
 }
 .link:last-child {
   border: 0;

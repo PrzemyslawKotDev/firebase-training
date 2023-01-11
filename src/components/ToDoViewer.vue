@@ -17,6 +17,7 @@
         >
           <div v-if="isChecked" class="bird"></div>
         </div>
+        <!-- zrobić spinnera, disable na czas requestow, ew 500ms timeout na disable -->
       </div>
     </div>
     <button class="delete" @click="deleteToDo(data.id, data.imageName)">
@@ -29,7 +30,6 @@
 import type { DocumentData } from "@firebase/firestore";
 import { useDebounceFn } from "@vueuse/core";
 import { ref } from "vue";
-import handleToDo from "@/service/handleTodo";
 import deleteToDo from "@/service/deleteToDo";
 import ImageDisplay from "./ImageDisplay.vue";
 
@@ -40,14 +40,7 @@ const props = defineProps<PropsType>();
 const isChecked = ref(props.data.isDone);
 
 //nie wiem czy to dobry pomysł dawac tu debounce, z jednej strony ograniczy traffic z drugiej mogą być bugi
-const debouncedIsDoneSave = useDebounceFn(() => {
-  handleToDo(
-    props.data.id,
-    props.data.todo,
-    isChecked.value,
-    props.data.imageName
-  );
-}, 1000);
+const debouncedIsDoneSave = useDebounceFn(() => {}, 1000);
 
 function changeDoneState() {
   isChecked.value = !isChecked.value;

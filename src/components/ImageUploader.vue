@@ -1,11 +1,9 @@
 <template>
   <div class="image-uploader">
-    <label for="file" class="file-label" tabindex="0" @click="clearProgress"
+    <label class="file-label"
       >Click to add image
       <input
         type="file"
-        id="file"
-        name="file"
         @change="handleFileUpload($event)"
         accept="image/*"
         capture
@@ -62,6 +60,7 @@ function sendFile() {
       },
       () => {
         //success
+        progressBar.value = "";
         fileName.value = "";
         emit("clearInputs");
       }
@@ -75,10 +74,6 @@ function sendFile() {
     }
   }
 }
-
-function clearProgress() {
-  progressBar.value = "";
-}
 </script>
 
 <style scoped>
@@ -88,12 +83,6 @@ function clearProgress() {
   position: relative;
   margin: 10px 0;
 }
-label {
-  padding-right: 5px;
-}
-.image-input {
-  display: none;
-}
 .file-label {
   position: absolute;
   inset: 0;
@@ -102,7 +91,19 @@ label {
   justify-content: center;
   align-items: center;
   cursor: pointer;
+  padding-right: 5px;
+  border: 1px solid rgb(118, 118, 118);
+  border-radius: 2px;
 }
+label:focus-within {
+  border: 2px solid black;
+  outline: 1px solid white;
+}
+.image-input {
+  z-index: -1;
+  position: absolute;
+}
+
 .file-label:after {
   content: "";
   position: absolute;
