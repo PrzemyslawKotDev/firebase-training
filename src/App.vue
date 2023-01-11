@@ -1,20 +1,32 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from "vue-router";
-import { signOut } from "firebase/auth";
+import { signOut, onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/service/firebaseConnection";
+import { ref } from "vue";
+
+const isLogged = ref(false);
 
 function logout() {
   signOut(auth)
-    .then(() => {})
+    .then(() => {
+      isLogged.value = false;
+    })
     .catch((error) => {
       alert(`ERROR WHILE LOGGING OUT: ${error}`);
     });
 }
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    isLogged.value = true;
+    const uid = user.uid;
+  }
+});
 </script>
 
 <template>
   <div class="container">
-    <nav>
+    <nav v-if="isLogged">
       <RouterLink class="link" to="/home">Show data</RouterLink>
       <RouterLink class="link" to="/addtodo">Add todo</RouterLink>
       <RouterLink class="link" to="/images">Images</RouterLink>

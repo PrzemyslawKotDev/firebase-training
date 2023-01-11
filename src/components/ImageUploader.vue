@@ -1,6 +1,6 @@
 <template>
   <div class="image-uploader">
-    <label for="file" class="file-label" tabindex="0"
+    <label for="file" class="file-label" tabindex="0" @click="clearProgress"
       >Click to add image
       <input
         type="file"
@@ -19,7 +19,7 @@
 <script setup lang="ts">
 import getFileRef from "@/service/getFileRef";
 import { ref } from "vue";
-import { type StorageReference, uploadBytes } from "firebase/storage";
+import { type StorageReference, uploadBytesResumable } from "firebase/storage";
 
 type PropsType = {
   name: string;
@@ -28,9 +28,10 @@ type PropsType = {
 const props = defineProps<PropsType>();
 const fileInputKey = ref(0);
 const file = ref<File>();
-const emit = defineEmits(["filename"]);
+const emit = defineEmits(["filename", "clearInputs"]);
 const imageRef = ref<StorageReference>();
 const fileName = ref("");
+const progressBar = ref("");
 defineExpose({ sendFile });
 
 function handleFileUpload(e: any) {
@@ -48,9 +49,23 @@ function handleFileUpload(e: any) {
 }
 function sendFile() {
   if (imageRef.value && file.value) {
-    uploadBytes(imageRef.value, file.value).then((snapshot) => {
-      console.log("Uploaded a blob or file!");
-    });
+    const uploadTask = uploadBytesResumable(imageRef.value, file.value);
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const progress =
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        progressBar.value = `${progress}%`;
+      },
+      (error) => {
+        alert(`FILE UPLOAD UNSUCCESSFUL: ${error}`);
+      },
+      () => {
+        //success
+        fileName.value = "";
+        emit("clearInputs");
+      }
+    );
   } else {
     if (!imageRef.value) {
       alert("ERROR WITH GETING REFERENCE");
@@ -59,6 +74,10 @@ function sendFile() {
       alert("ERROR WITH UPLOADING FILE");
     }
   }
+}
+
+function clearProgress() {
+  progressBar.value = "";
 }
 </script>
 
@@ -83,5 +102,15 @@ label {
   justify-content: center;
   align-items: center;
   cursor: pointer;
+}
+.file-label:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  background: rgba(0, 255, 0, 0.227);
+  width: v-bind(progressBar);
+  height: 100%;
 }
 </style>

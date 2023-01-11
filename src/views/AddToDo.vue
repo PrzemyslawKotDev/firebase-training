@@ -11,9 +11,11 @@
       v-if="todoName"
       :name="todoName"
       @filename="setFileName"
+      @clear-inputs="clearInputs"
     />
 
     <button class="add-btn" @click="sendToDo">Add ToDo</button>
+    <div v-if="isSuccess" class="success">Successfuly added</div>
   </div>
 </template>
 
@@ -26,6 +28,7 @@ const todoName = ref("");
 const todo = ref("");
 const fileName = ref("");
 const imageUploader = ref();
+const isSuccess = ref(false);
 
 function sendToDo() {
   const todoNameStr =
@@ -34,8 +37,19 @@ function sendToDo() {
   imageUploader.value.sendFile();
   handleToDo(todoNameStr, todoStr, false, fileName.value);
 }
+
 function setFileName(name: string) {
   fileName.value = name;
+}
+
+function clearInputs() {
+  todoName.value = "";
+  todo.value = "";
+  fileName.value = "";
+  isSuccess.value = true;
+  window.setTimeout(() => {
+    isSuccess.value = false;
+  }, 2000);
 }
 </script>
 
@@ -57,5 +71,14 @@ input {
   width: 100%;
   padding: 5px 0;
   margin: 5px 0;
+}
+.success {
+  text-align: center;
+  padding: 10px;
+  width: 100%;
+  margin: 10px 0;
+  border-radius: 5px;
+  font-weight: 700;
+  background-color: greenyellow;
 }
 </style>
