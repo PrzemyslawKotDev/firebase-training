@@ -7,10 +7,10 @@ import router from "./router";
 
 // vuequery
 // warianty todos dla pracy, zakupy, relax
-// list >> typ todosów >> to do lub produkt do kupienia itp
 
 const isLogged = ref(false);
 
+//logout function
 function logout() {
   signOut(auth)
     .then(() => {
@@ -21,6 +21,7 @@ function logout() {
     });
 }
 
+//observe if user is logged
 onAuthStateChanged(auth, (user) => {
   if (user) {
     isLogged.value = true;

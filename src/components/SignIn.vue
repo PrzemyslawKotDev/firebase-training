@@ -36,13 +36,11 @@ const emit = defineEmits(["close"]);
 function signin() {
   if (password.value === password2.value) {
     createUserWithEmailAndPassword(auth, email.value, password.value)
-      .then((userCredential) => {
-        const user = userCredential.user;
+      .then(() => {
         router.push({ name: "home" });
         emit("close");
       })
       .catch((error) => {
-        const errorCode = error.code;
         const errorMessage = error.message;
         alert(`CREATE USER ERROR: ${errorMessage}`);
       });

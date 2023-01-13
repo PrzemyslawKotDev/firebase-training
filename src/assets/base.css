@@ -1,5 +1,4 @@
 
-
 *,
 *::before,
 *::after {
@@ -16,7 +15,8 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: rgb(208, 216, 220);
+--color-background: rgb(208, 216, 220);
+  background-color: var(--color-background);
 }
 
 img {

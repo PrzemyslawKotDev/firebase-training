@@ -25,6 +25,7 @@ const email = ref("");
 const password = ref("");
 const isSignin = ref(false);
 
+//login function
 function login() {
   signInWithEmailAndPassword(auth, email.value, password.value)
     .then((userCredential) => {

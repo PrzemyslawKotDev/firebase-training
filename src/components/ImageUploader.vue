@@ -4,7 +4,7 @@
       >Click to add image
       <input
         type="file"
-        @change="handleFileUpload($event)"
+        @change="handleFileLoad($event)"
         accept="image/*"
         capture
         :key="fileInputKey"
@@ -19,33 +19,29 @@ import getFileRef from "@/service/getFileRef";
 import { ref } from "vue";
 import { type StorageReference, uploadBytesResumable } from "firebase/storage";
 
-type PropsType = {
-  name: string;
-};
-
-const props = defineProps<PropsType>();
 const fileInputKey = ref(0);
 const file = ref<File>();
 const emit = defineEmits(["filename", "clearInputs"]);
 const imageRef = ref<StorageReference>();
 const fileName = ref("");
+const fileExtension = ref("");
 const progressBar = ref("");
+//LET PARENT COMPONENT SEE YOUR FUNCTION
 defineExpose({ sendFile });
 
-function handleFileUpload(e: any) {
+//handle img load and get extension
+function handleFileLoad(e: any) {
   const target = e.target as HTMLInputElement;
   if (target && target.files) {
     file.value = target.files[0];
-    const fileExtension = file.value?.name.split(".").reverse()[0];
-    fileName.value = `${props.name
-      .toLowerCase()
-      .replace(/\s/g, "")}.${fileExtension}`;
-    imageRef.value = getFileRef("images", `${fileName.value}`);
-    emit("filename", fileName.value);
-    fileInputKey.value++;
+    fileExtension.value = file.value?.name.split(".").reverse()[0];
+    emit("filename", fileExtension.value);
   }
 }
-function sendFile() {
+
+//exposed function to send image to firestore
+function sendFile(imgName: string) {
+  imageRef.value = getFileRef("images", `${imgName}`);
   if (imageRef.value && file.value) {
     const uploadTask = uploadBytesResumable(imageRef.value, file.value);
     uploadTask.on(
@@ -62,6 +58,7 @@ function sendFile() {
         //success
         progressBar.value = "";
         fileName.value = "";
+        fileInputKey.value++;
         emit("clearInputs");
       }
     );

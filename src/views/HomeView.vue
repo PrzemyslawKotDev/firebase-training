@@ -4,40 +4,45 @@
       {{ item }}
     </button>
   </div>
-  <!-- <ToDoViewer v-for="item in list" :key="item.id" :data="item.data()" /> -->
+  <ToDoViewer
+    v-for="item in categoryData"
+    :key="item.id"
+    :data="item"
+    :category="openedCategory"
+    @delete="removeItem"
+  />
 </template>
 
 <script setup lang="ts">
 import ToDoViewer from "../components/ToDoViewer.vue";
 import { db } from "@/service/firebaseConnection";
 import { ref } from "vue";
-import { collection, getDocs } from "firebase/firestore";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, getDocs, type DocumentData } from "firebase/firestore";
 
 const listArray = ref<string[]>([]);
-const categoryData = ref("");
+const categoryData = ref<DocumentData[]>([]);
+const openedCategory = ref("");
 
+//get categories
 getDocs(collection(db, "list")).then((querySnapshot) => {
   querySnapshot.forEach((doc) => {
     listArray.value.push(`${doc.id}`);
   });
 });
 
+//get data of category
 async function getDocData(docName: string) {
-  getDocs(collection(db, "list", docName, "todos")).then((querySnapshot) => {
+  categoryData.value = [];
+  openedCategory.value = docName;
+  getDocs(collection(db, "list", docName, "list")).then((querySnapshot) => {
     querySnapshot.forEach((doc) => {
-      console.log(doc.data());
+      categoryData.value.push({ id: doc.id, ...doc.data() });
     });
   });
-  // const docRef = doc(db, "list", `${docName}/todos`);
-  // getDoc(docRef).then((docSnap) => {
-  //   if (docSnap.exists()) {
-  //     console.log("Document data:", docSnap.data());
-  //   } else {
-  //     // doc.data() will be undefined in this case
-  //     console.log("No such document!");
-  //   }
-  // });
+}
+
+function removeItem(id: string) {
+  categoryData.value = categoryData.value.filter((obj) => obj.id !== id);
 }
 </script>
 
@@ -58,6 +63,7 @@ async function getDocData(docName: string) {
   border-right: 2px solid black;
   background-color: transparent;
   text-transform: uppercase;
+  cursor: pointer;
 }
 .link:last-child {
   border: 0;
