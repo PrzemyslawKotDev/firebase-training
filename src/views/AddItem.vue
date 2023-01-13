@@ -11,11 +11,15 @@
     </div>
     <div class="input">
       <label for="todoTitle">Name:</label>
-      <input id="todoTitle" name="todoTitle" v-model="name.value" />
+      <input id="todoTitle" name="todoTitle" v-model="dataObj.name" />
     </div>
     <div v-if="todoType === 'work' || todoType === 'house'" class="input">
       <label for="description">Description:</label>
-      <input id="description" name="description" v-model="description.value" />
+      <input
+        id="description"
+        name="description"
+        v-model="dataObj.description"
+      />
     </div>
     <div v-if="todoType === 'shopping' || todoType === 'storage'" class="input">
       <label for="description">Amount:</label>
@@ -23,7 +27,7 @@
         id="description"
         name="description"
         type="number"
-        v-model="amount.value"
+        v-model="dataObj.amount"
       />
     </div>
     <div v-if="todoType === 'storage'" class="input">
@@ -32,14 +36,10 @@
         id="description"
         name="description"
         type="number"
-        v-model="expectedStocks.value"
+        v-model="dataObj.expectedStocks"
       />
     </div>
-    <ImageUploader
-      ref="imageUploader"
-      @filename="setFileName"
-      @clear-inputs="clearInputs"
-    />
+    <ImageUploader ref="imageUploader" @clear-inputs="clearInputs" />
 
     <button class="add-btn" @click="sendToDo">Add to database</button>
     <div v-if="isSuccess" class="success">Successfuly added</div>
@@ -54,16 +54,20 @@ import { collection, doc, setDoc } from "firebase/firestore";
 type DataObjType = {
   name: string;
   description?: string;
-  amount?: string;
-  expectedStocks?: string;
+  amount?: number;
+  expectedStocks?: number;
   isDone?: boolean;
   image: string;
 };
 
-const name = ref({ name: "name", value: "" });
-const description = ref({ name: "description", value: "" });
-const amount = ref({ name: "amount", value: 0 });
-const expectedStocks = ref({ name: "expectedStocks", value: 0 });
+const dataObj = ref<DataObjType>({
+  name: "",
+  description: "",
+  amount: 0,
+  expectedStocks: 0,
+  image: "",
+});
+
 const fileExtension = ref("");
 const imageUploader = ref();
 const isSuccess = ref(false);
@@ -71,47 +75,25 @@ const todoType = ref("work");
 
 //build data object and send to database
 async function sendToDo() {
-  const todoNameStr =
-    name.value.value.charAt(0).toUpperCase() + name.value.value.slice(1);
   const docRef = doc(collection(db, "list", todoType.value, "list"));
-  const imgName = `${docRef.id}.${fileExtension.value}`;
-  const dataObj = <DataObjType>{};
+  const imgName = `${docRef.id}.png`;
 
-  dataObj["image"] = imgName;
+  dataObj.value.image = imgName;
   //use of exposed function from child
   imageUploader.value.sendFile(imgName);
 
-  if (name.value.value) {
-    dataObj[name.value.name] = todoNameStr;
-  }
-  if (description.value.value) {
-    const todoStr =
-      description.value.value.charAt(0).toUpperCase() +
-      description.value.value.slice(1);
-    dataObj[description.value.name] = todoStr;
-  }
-  if (amount.value.value) {
-    dataObj[amount.value.name] = amount.value.value;
-  }
-  if (expectedStocks.value.value) {
-    dataObj[expectedStocks.value.name] = expectedStocks.value.value;
-  }
   if (todoType.value !== "storage") {
-    dataObj["isDone"] = false;
+    dataObj.value["isDone"] = false;
   }
 
-  setDoc(docRef, dataObj);
-}
-
-function setFileName(name: string) {
-  fileExtension.value = name;
+  setDoc(docRef, dataObj.value);
 }
 
 function clearInputs() {
-  name.value.value = "";
-  description.value.value = "";
-  amount.value.value = 0;
-  expectedStocks.value.value = 0;
+  dataObj.value.name = "";
+  dataObj.value.description = "";
+  dataObj.value.amount = 0;
+  dataObj.value.expectedStocks = 0;
   fileExtension.value = "";
   isSuccess.value = true;
   window.setTimeout(() => {

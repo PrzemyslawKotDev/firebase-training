@@ -12,6 +12,7 @@
       />
     </label>
   </div>
+  <canvas ref="canva" width="300" height="300" class="canva"></canvas>
 </template>
 
 <script setup lang="ts">
@@ -19,23 +20,37 @@ import getFileRef from "@/service/getFileRef";
 import { ref } from "vue";
 import { type StorageReference, uploadBytesResumable } from "firebase/storage";
 
+const canva = ref();
 const fileInputKey = ref(0);
-const file = ref<File>();
-const emit = defineEmits(["filename", "clearInputs"]);
+const file = ref<Blob>();
+const emit = defineEmits(["clearInputs"]);
 const imageRef = ref<StorageReference>();
-const fileName = ref("");
-const fileExtension = ref("");
 const progressBar = ref("");
+
 //LET PARENT COMPONENT SEE YOUR FUNCTION
 defineExpose({ sendFile });
 
 //handle img load and get extension
 function handleFileLoad(e: any) {
-  const target = e.target as HTMLInputElement;
-  if (target && target.files) {
-    file.value = target.files[0];
-    fileExtension.value = file.value?.name.split(".").reverse()[0];
-    emit("filename", fileExtension.value);
+  const eventFile = e.target.files[0];
+  if (eventFile) {
+    const blobURL = URL.createObjectURL(eventFile);
+    const img = new Image();
+    img.src = blobURL;
+
+    img.onerror = function () {
+      URL.revokeObjectURL(this.src);
+      alert("Cannot load image");
+    };
+
+    img.onload = async function () {
+      URL.revokeObjectURL(img.src);
+      const ctx = canva.value.getContext("2d");
+      ctx.drawImage(img, 0, 0, 300, 300);
+      file.value = await new Promise((resolve) =>
+        canva.value.toBlob(resolve, "image/png")
+      );
+    };
   }
 }
 
@@ -57,8 +72,8 @@ function sendFile(imgName: string) {
       () => {
         //success
         progressBar.value = "";
-        fileName.value = "";
         fileInputKey.value++;
+        canva.value.width = canva.value.width;
         emit("clearInputs");
       }
     );
@@ -110,5 +125,9 @@ label:focus-within {
   background: rgba(0, 255, 0, 0.227);
   width: v-bind(progressBar);
   height: 100%;
+}
+.canva {
+  position: absolute;
+  visibility: hidden;
 }
 </style>

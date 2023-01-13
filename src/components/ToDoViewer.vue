@@ -9,8 +9,28 @@
       <div v-if="data.amount" class="description">
         Amonut: {{ data.amount }}
       </div>
-      <div v-if="data.expectedStocks" class="description">
-        Expected stocks: {{ data.expectedStocks }}
+      <div v-if="data.expectedStocks" class="exp-stocks">
+        <button
+          v-if="expStockNum != initialExpStock"
+          @click="updateExpectedStock"
+          class="stock-btn accept"
+        >
+          <div class="stock-bird bird"></div>
+        </button>
+        <button
+          v-if="expStockNum != initialExpStock"
+          @click="expStockNum = initialExpStock"
+          class="stock-btn cancel"
+        >
+          +
+        </button>
+        <label for="expStock">Expected stocks:</label>
+        <input
+          id="expStock"
+          name="expStock"
+          v-model="expStockNum"
+          type="number"
+        />
       </div>
       <div v-else class="todo-state">
         <label class="checkbox-label">Check if is done </label>
@@ -29,7 +49,7 @@
               'is-disabled': isLoader,
             }"
           ></div>
-          <div v-if="isChecked" class="bird" :class="{}"></div>
+          <div v-if="isChecked" class="bird"></div>
         </div>
         <!-- zrobić spinnera, disable na czas requestow, ew 500ms timeout na disable -->
       </div>
@@ -55,6 +75,8 @@ const props = defineProps<PropsType>();
 const isChecked = ref(props.data.isDone);
 const isLoader = ref(false);
 const emit = defineEmits(["delete"]);
+const initialExpStock = ref(props.data.expectedStocks);
+const expStockNum = ref(props.data.expectedStocks);
 
 function changeDoneState() {
   if (isLoader.value) {
@@ -83,14 +105,38 @@ function changeDoneState() {
 }
 
 function handleDelete(category: string, id: string, img: string) {
-  const isDeleted = deleteToDo(category, id, img);
+  let image: string | boolean = img;
+  if (props.category === "shopping") {
+    image = false;
+  }
+  const isDeleted = deleteToDo(category, id, image);
   if (isDeleted) {
     emit("delete", id);
+  }
+}
+
+function updateExpectedStock() {
+  try {
+    updateDoc(doc(db, "list", props.category, "list", props.data.id), {
+      expectedStocks: expStockNum.value,
+    }).then(() => {
+      initialExpStock.value = expStockNum.value;
+    });
+  } catch (er) {
+    alert("DATA SAVE ERROR");
+    console.log(er);
+    isChecked.value = !isChecked.value;
+    window.setTimeout(() => {
+      isLoader.value = false;
+    }, 100);
   }
 }
 </script>
 
 <style scoped>
+#expStock {
+  width: 80px;
+}
 .todo-bar {
   border-radius: 10px;
   padding: 10px;
@@ -103,9 +149,18 @@ function handleDelete(category: string, id: string, img: string) {
 .title {
   font-size: 30px;
 }
+.title:first-letter {
+  text-transform: uppercase;
+}
 .description {
   padding: 10px 0;
   font-size: 25px;
+}
+.exp-stocks {
+  margin: 10px 0;
+}
+.description:first-letter {
+  text-transform: uppercase;
 }
 .checkbox-label {
   font-size: 20px;
@@ -168,6 +223,34 @@ function handleDelete(category: string, id: string, img: string) {
   rotate: 45deg;
   color: red;
   font-weight: 600;
+}
+.cancel {
+  top: 0.5px;
+  right: 20px;
+  font-size: 18px;
+  rotate: 45deg;
+  font-weight: 600;
+  color: red;
+}
+.accept {
+  top: 3.5px;
+  right: 40px;
+}
+.stock-bird {
+  border-bottom: 3px solid green;
+  border-right: 3px solid green;
+}
+
+.stock-btn {
+  position: absolute;
+  width: 18px;
+  aspect-ratio: 1/1;
+  background-color: transparent;
+  border: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @keyframes spin {
