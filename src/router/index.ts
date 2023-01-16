@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import AddToDo from '../views/AddItem.vue'
+import AddItem from '../views/AddItem.vue'
 import LogIn from '../views/LogIn.vue'
 
 const router = createRouter({
@@ -17,9 +17,9 @@ const router = createRouter({
       component: HomeView
     },
     {
-      path: '/addtodo',
-      name: 'addtodo',
-      component: AddToDo
+      path: '/additem',
+      name: 'additem',
+      component: AddItem
     }
   ]
 })

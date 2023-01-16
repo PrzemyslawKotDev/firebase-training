@@ -1,9 +1,11 @@
 <template>
-  <div class="todos-display">
-    <button v-for="item in listArray" class="link" @click="getDocData(item)">
-      {{ item }}
-    </button>
-  </div>
+  <Teleport to=".navigation">
+    <div class="todos-display">
+      <button v-for="item in listArray" class="link" @click="getDocData(item)">
+        {{ item }}
+      </button>
+    </div>
+  </Teleport>
   <button
     v-if="openedCategory === 'storage'"
     class="restock"
@@ -18,29 +20,18 @@
     :category="openedCategory"
     @delete="removeItem"
   />
-  <Overlay v-if="isOpenRaport">
-    <div class="raport">
-      <div v-for="item in restocks" class="row">
-        <div class="name">{{ item.name }}</div>
-        <div class="amount">{{ item.amount }}</div>
-      </div>
-      <button class="delete" @click="isOpenRaport = false">+</button>
-    </div>
-  </Overlay>
+  <Overlay v-if="isOpenRaport" @click.self="isOpenRaport = false"
+    ><Restock :data="restocks" @close-restock="isOpenRaport = false"
+  /></Overlay>
 </template>
 
 <script setup lang="ts">
 import ToDoViewer from "../components/ToDoViewer.vue";
 import { db } from "@/service/firebaseConnection";
 import { ref } from "vue";
-import {
-  collection,
-  doc,
-  getDocs,
-  setDoc,
-  type DocumentData,
-} from "firebase/firestore";
+import { collection, getDocs, type DocumentData } from "firebase/firestore";
 import Overlay from "@/components/Overlay.vue";
+import Restock from "@/components/Restock.vue";
 
 type RestockType = {
   amount: number;
@@ -54,7 +45,6 @@ const categoryData = ref<DocumentData[]>([]);
 const openedCategory = ref("");
 const restocks = ref<RestockType[]>([]);
 const isOpenRaport = ref(false);
-const isRestockDone = ref(false);
 
 //get categories
 getDocs(collection(db, "list")).then((querySnapshot) => {
@@ -80,40 +70,48 @@ function removeItem(id: string) {
 
 function generateRestockList() {
   isOpenRaport.value = true;
-  if (!isRestockDone.value) {
-    restocks.value = [];
-    categoryData.value.forEach((item) => {
-      if (item.amount < item.expectedStocks) {
-        const dataObj = {
-          amount: item.expectedStocks - item.amount,
-          image: item.image,
-          name: item.name,
-          isDone: false,
-        };
-        restocks.value.push(dataObj);
-        const docRef = doc(collection(db, "list", "shopping", "list"));
-        setDoc(docRef, dataObj);
-      }
-    });
-  }
-  isRestockDone.value = true;
+  restocks.value = [];
+  categoryData.value.forEach((item) => {
+    if (item.amount < item.expectedStocks) {
+      const dataObj = {
+        amount: item.expectedStocks - item.amount,
+        image: item.image,
+        name: item.name,
+        isDone: false,
+      };
+      restocks.value.push(dataObj);
+    }
+  });
 }
 </script>
 
 <style scoped>
-.name {
-  padding-right: 10px;
+.row {
+  padding: 5px;
+  display: grid;
+  grid-template-columns: 5fr 1fr;
 }
-.delete {
-  position: absolute;
-  right: -7px;
-  top: -5px;
-  border: 0;
-  background-color: transparent;
-  font-size: 28px;
-  rotate: 45deg;
-  color: red;
+.todos-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.link {
+  text-align: center;
+  font-size: 20px;
   font-weight: 600;
+  text-decoration: none;
+  color: black;
+  padding: 5px 10px;
+  background-color: transparent;
+  text-transform: uppercase;
+  border: 0;
+  border-bottom: 2px solid black;
+  width: 100%;
+}
+.link:last-child {
+  border: 0;
 }
 .restock {
   position: fixed;
@@ -127,36 +125,6 @@ function generateRestockList() {
   font-size: 20px;
   font-weight: 600;
   cursor: pointer;
-}
-.raport {
-  background-color: aliceblue;
-  padding: 20px;
-  border-radius: 10px;
-}
-.row {
-  padding: 5px;
-  display: grid;
-  grid-template-columns: 5fr 1fr;
-}
-.todos-display {
-  width: 700px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: center;
-}
-.link {
-  border: 0;
-  font-size: 16px;
-  font-weight: 600;
-  text-decoration: none;
-  color: black;
-  padding: 5px 10px;
-  border-right: 2px solid black;
-  background-color: transparent;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-.link:last-child {
-  border: 0;
+  z-index: 51;
 }
 </style>

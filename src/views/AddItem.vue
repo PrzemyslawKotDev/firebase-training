@@ -51,6 +51,7 @@ import { ref } from "vue";
 import ImageUploader from "@/components/ImageUploader.vue";
 import { db } from "@/service/firebaseConnection";
 import { collection, doc, setDoc } from "firebase/firestore";
+
 type DataObjType = {
   name: string;
   description?: string;
@@ -67,7 +68,6 @@ const dataObj = ref<DataObjType>({
   expectedStocks: 0,
   image: "",
 });
-
 const fileExtension = ref("");
 const imageUploader = ref();
 const isSuccess = ref(false);

@@ -33,25 +33,12 @@
         />
       </div>
       <div v-else class="todo-state">
-        <label class="checkbox-label">Check if is done </label>
-        <div
-          :class="{
-            'is-checked': isChecked && !isLoader,
-            'is-disabled': isLoader,
-          }"
-          class="checkbox"
-          @click="changeDoneState"
-        >
-          <div
-            v-if="isLoader"
-            class="loader"
-            :class="{
-              'is-disabled': isLoader,
-            }"
-          ></div>
-          <div v-if="isChecked" class="bird"></div>
-        </div>
-        <!-- zrobić spinnera, disable na czas requestow, ew 500ms timeout na disable -->
+        <Checkbox
+          :is-checked="isChecked"
+          is-loader
+          @clicked-checkbox="changeDoneState"
+          label="Mark as done"
+        />
       </div>
     </div>
     <button class="delete" @click="handleDelete(category, data.id, data.image)">
@@ -66,6 +53,7 @@ import { ref } from "vue";
 import deleteToDo from "@/service/deleteToDo";
 import ImageDisplay from "./ImageDisplay.vue";
 import { db } from "@/service/firebaseConnection";
+import Checkbox from "./Checkbox.vue";
 
 type PropsType = {
   data: DocumentData;
@@ -73,34 +61,20 @@ type PropsType = {
 };
 const props = defineProps<PropsType>();
 const isChecked = ref(props.data.isDone);
-const isLoader = ref(false);
 const emit = defineEmits(["delete"]);
 const initialExpStock = ref(props.data.expectedStocks);
 const expStockNum = ref(props.data.expectedStocks);
 
 function changeDoneState() {
-  if (isLoader.value) {
-    return;
-  } else {
-    isLoader.value = true;
+  isChecked.value = !isChecked.value;
+  try {
+    updateDoc(doc(db, "list", props.category, "list", props.data.id), {
+      isDone: isChecked.value,
+    }).then(() => {});
+  } catch (er) {
+    alert("DATA SAVE ERROR");
+    console.log(er);
     isChecked.value = !isChecked.value;
-
-    try {
-      updateDoc(doc(db, "list", props.category, "list", props.data.id), {
-        isDone: isChecked.value,
-      }).then(() => {
-        window.setTimeout(() => {
-          isLoader.value = false;
-        }, 500);
-      });
-    } catch (er) {
-      alert("DATA SAVE ERROR");
-      console.log(er);
-      isChecked.value = !isChecked.value;
-      window.setTimeout(() => {
-        isLoader.value = false;
-      }, 100);
-    }
   }
 }
 
@@ -126,11 +100,10 @@ function updateExpectedStock() {
     alert("DATA SAVE ERROR");
     console.log(er);
     isChecked.value = !isChecked.value;
-    window.setTimeout(() => {
-      isLoader.value = false;
-    }, 100);
   }
 }
+
+function checkboxState() {}
 </script>
 
 <style scoped>
@@ -156,62 +129,14 @@ function updateExpectedStock() {
   padding: 10px 0;
   font-size: 25px;
 }
-.exp-stocks {
-  margin: 10px 0;
-}
+
 .description:first-letter {
   text-transform: uppercase;
-}
-.checkbox-label {
-  font-size: 20px;
-  padding-right: 5px;
-}
-.checkbox {
-  width: 24px;
-  aspect-ratio: 1/1;
-  border: 2px solid cornflowerblue;
-  border-radius: 6px;
-  position: relative;
-  cursor: pointer;
-}
-.bird {
-  position: absolute;
-  rotate: 40deg;
-  border-bottom: 2px solid black;
-  border-right: 2px solid black;
-  width: 8px;
-  top: 3px;
-  left: 6px;
-  aspect-ratio: 3/4;
-}
-.loader {
-  position: absolute;
-  z-index: 1;
-  inset: 0;
-  border-radius: 50%;
-  aspect-ratio: 1/1;
-  border: 2px dotted black;
-  margin: 2px;
-  animation-name: spin;
-  animation-duration: 4000ms;
-  animation-iteration-count: infinite;
-  animation-timing-function: linear;
-  background-color: var(--color-background);
 }
 
 .is-done {
   text-decoration: line-through;
   color: gray;
-}
-.is-checked {
-  background-color: rgb(156, 191, 255);
-}
-.is-disabled {
-  cursor: not-allowed;
-}
-.todo-state {
-  display: flex;
-  align-items: center;
 }
 .delete {
   position: absolute;
@@ -236,6 +161,19 @@ function updateExpectedStock() {
   top: 3.5px;
   right: 40px;
 }
+.exp-stocks {
+  margin: 10px 0;
+}
+.bird {
+  position: absolute;
+  rotate: 40deg;
+  border-bottom: 2px solid black;
+  border-right: 2px solid black;
+  width: 8px;
+  top: 3px;
+  left: 6px;
+  aspect-ratio: 3/4;
+}
 .stock-bird {
   border-bottom: 3px solid green;
   border-right: 3px solid green;
@@ -251,14 +189,5 @@ function updateExpectedStock() {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 </style>
