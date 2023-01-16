@@ -1,12 +1,10 @@
 <template>
   <div class="image-uploader">
-    <label for="file" class="file-label" tabindex="0" @click="clearProgress"
+    <label class="file-label"
       >Click to add image
       <input
         type="file"
-        id="file"
-        name="file"
-        @change="handleFileUpload($event)"
+        @change="handleFileLoad($event)"
         accept="image/*"
         capture
         :key="fileInputKey"
@@ -14,6 +12,7 @@
       />
     </label>
   </div>
+  <canvas ref="canva" width="300" height="300" class="canva"></canvas>
 </template>
 
 <script setup lang="ts">
@@ -21,33 +20,43 @@ import getFileRef from "@/service/getFileRef";
 import { ref } from "vue";
 import { type StorageReference, uploadBytesResumable } from "firebase/storage";
 
-type PropsType = {
-  name: string;
-};
-
-const props = defineProps<PropsType>();
+const canva = ref();
 const fileInputKey = ref(0);
-const file = ref<File>();
-const emit = defineEmits(["filename", "clearInputs"]);
+const file = ref<Blob>();
+const emit = defineEmits(["clearInputs"]);
 const imageRef = ref<StorageReference>();
-const fileName = ref("");
 const progressBar = ref("");
+
+//LET PARENT COMPONENT SEE YOUR FUNCTION
 defineExpose({ sendFile });
 
-function handleFileUpload(e: any) {
-  const target = e.target as HTMLInputElement;
-  if (target && target.files) {
-    file.value = target.files[0];
-    const fileExtension = file.value?.name.split(".").reverse()[0];
-    fileName.value = `${props.name
-      .toLowerCase()
-      .replace(/\s/g, "")}.${fileExtension}`;
-    imageRef.value = getFileRef("images", `${fileName.value}`);
-    emit("filename", fileName.value);
-    fileInputKey.value++;
+//handle img load and get extension
+function handleFileLoad(e: any) {
+  const eventFile = e.target.files[0];
+  if (eventFile) {
+    const blobURL = URL.createObjectURL(eventFile);
+    const img = new Image();
+    img.src = blobURL;
+
+    img.onerror = function () {
+      URL.revokeObjectURL(this.src);
+      alert("Cannot load image");
+    };
+
+    img.onload = async function () {
+      URL.revokeObjectURL(img.src);
+      const ctx = canva.value.getContext("2d");
+      ctx.drawImage(img, 0, 0, 300, 300);
+      file.value = await new Promise((resolve) =>
+        canva.value.toBlob(resolve, "image/png")
+      );
+    };
   }
 }
-function sendFile() {
+
+//exposed function to send image to firestore
+function sendFile(imgName: string) {
+  imageRef.value = getFileRef("images", `${imgName}`);
   if (imageRef.value && file.value) {
     const uploadTask = uploadBytesResumable(imageRef.value, file.value);
     uploadTask.on(
@@ -62,7 +71,9 @@ function sendFile() {
       },
       () => {
         //success
-        fileName.value = "";
+        progressBar.value = "";
+        fileInputKey.value++;
+        canva.value.width = canva.value.width;
         emit("clearInputs");
       }
     );
@@ -75,10 +86,6 @@ function sendFile() {
     }
   }
 }
-
-function clearProgress() {
-  progressBar.value = "";
-}
 </script>
 
 <style scoped>
@@ -88,12 +95,6 @@ function clearProgress() {
   position: relative;
   margin: 10px 0;
 }
-label {
-  padding-right: 5px;
-}
-.image-input {
-  display: none;
-}
 .file-label {
   position: absolute;
   inset: 0;
@@ -102,7 +103,19 @@ label {
   justify-content: center;
   align-items: center;
   cursor: pointer;
+  padding-right: 5px;
+  border: 1px solid rgb(118, 118, 118);
+  border-radius: 2px;
 }
+label:focus-within {
+  border: 2px solid black;
+  outline: 1px solid white;
+}
+.image-input {
+  z-index: -1;
+  position: absolute;
+}
+
 .file-label:after {
   content: "";
   position: absolute;
@@ -112,5 +125,9 @@ label {
   background: rgba(0, 255, 0, 0.227);
   width: v-bind(progressBar);
   height: 100%;
+}
+.canva {
+  position: absolute;
+  visibility: hidden;
 }
 </style>

@@ -1,61 +1,115 @@
 <template>
   <div :class="{ 'is-done': isChecked }" class="todo-bar">
-    <div class="image">
-      <ImageDisplay :image-name="data.imageName" />
-    </div>
+    <ImageDisplay :image-name="data.image" :alt="`${data.name} image`" />
     <div class="info">
-      <div class="title">{{ data.id }}</div>
-      <div class="description">
-        {{ data.todo }}
+      <div class="title">{{ data.name }}</div>
+      <div v-if="data.description" class="description">
+        {{ data.description }}
       </div>
-      <div class="todo-state">
-        <label class="checkbox-label">Check if is done </label>
-        <div
-          :class="{ 'is-checked': isChecked }"
-          class="checkbox"
-          @click="changeDoneState"
+      <div v-if="data.amount" class="description">
+        Amonut: {{ data.amount }}
+      </div>
+      <div v-if="data.expectedStocks" class="exp-stocks">
+        <button
+          v-if="expStockNum != initialExpStock"
+          @click="updateExpectedStock"
+          class="stock-btn accept"
         >
-          <div v-if="isChecked" class="bird"></div>
-        </div>
+          <div class="stock-bird bird"></div>
+        </button>
+        <button
+          v-if="expStockNum != initialExpStock"
+          @click="expStockNum = initialExpStock"
+          class="stock-btn cancel"
+        >
+          +
+        </button>
+        <label for="expStock">Expected stocks:</label>
+        <input
+          id="expStock"
+          name="expStock"
+          v-model="expStockNum"
+          type="number"
+        />
+      </div>
+      <div v-else class="todo-state">
+        <Checkbox
+          :is-checked="isChecked"
+          is-loader
+          @clicked-checkbox="changeDoneState"
+          label="Mark as done"
+        />
       </div>
     </div>
-    <button class="delete" @click="deleteToDo(data.id, data.imageName)">
+    <button class="delete" @click="handleDelete(category, data.id, data.image)">
       +
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { DocumentData } from "@firebase/firestore";
-import { useDebounceFn } from "@vueuse/core";
+import { doc, updateDoc, type DocumentData } from "@firebase/firestore";
 import { ref } from "vue";
-import handleToDo from "@/service/handleTodo";
 import deleteToDo from "@/service/deleteToDo";
 import ImageDisplay from "./ImageDisplay.vue";
+import { db } from "@/service/firebaseConnection";
+import Checkbox from "./Checkbox.vue";
 
 type PropsType = {
   data: DocumentData;
+  category: string;
 };
 const props = defineProps<PropsType>();
 const isChecked = ref(props.data.isDone);
-
-//nie wiem czy to dobry pomysł dawac tu debounce, z jednej strony ograniczy traffic z drugiej mogą być bugi
-const debouncedIsDoneSave = useDebounceFn(() => {
-  handleToDo(
-    props.data.id,
-    props.data.todo,
-    isChecked.value,
-    props.data.imageName
-  );
-}, 1000);
+const emit = defineEmits(["delete"]);
+const initialExpStock = ref(props.data.expectedStocks);
+const expStockNum = ref(props.data.expectedStocks);
 
 function changeDoneState() {
   isChecked.value = !isChecked.value;
-  debouncedIsDoneSave();
+  try {
+    updateDoc(doc(db, "list", props.category, "list", props.data.id), {
+      isDone: isChecked.value,
+    }).then(() => {});
+  } catch (er) {
+    alert("DATA SAVE ERROR");
+    console.log(er);
+    isChecked.value = !isChecked.value;
+  }
 }
+
+function handleDelete(category: string, id: string, img: string) {
+  let image: string | boolean = img;
+  if (props.category === "shopping") {
+    image = false;
+  }
+  const isDeleted = deleteToDo(category, id, image);
+  if (isDeleted) {
+    emit("delete", id);
+  }
+}
+
+function updateExpectedStock() {
+  try {
+    updateDoc(doc(db, "list", props.category, "list", props.data.id), {
+      expectedStocks: expStockNum.value,
+    }).then(() => {
+      initialExpStock.value = expStockNum.value;
+    });
+  } catch (er) {
+    alert("DATA SAVE ERROR");
+    console.log(er);
+    isChecked.value = !isChecked.value;
+  }
+}
+
+function checkboxState() {}
 </script>
 
 <style scoped>
+#expStock {
+  width: 80px;
+}
 .todo-bar {
   border-radius: 10px;
   padding: 10px;
@@ -64,52 +118,25 @@ function changeDoneState() {
   display: flex;
   align-items: center;
 }
-.image {
-  height: 150px;
-  aspect-ratio: 1/1;
-  border: 1px solid black;
-  margin-right: 10px;
-}
 
 .title {
   font-size: 30px;
+}
+.title:first-letter {
+  text-transform: uppercase;
 }
 .description {
   padding: 10px 0;
   font-size: 25px;
 }
-.checkbox-label {
-  font-size: 20px;
-  padding-right: 5px;
-}
-.checkbox {
-  width: 20px;
-  aspect-ratio: 1/1;
-  border: 1px solid black;
-  border-radius: 6px;
-  position: relative;
-}
-.bird {
-  position: absolute;
-  rotate: 40deg;
-  border-bottom: 2px solid black;
-  border-right: 2px solid black;
-  width: 6px;
-  top: 3px;
-  left: 5.75px;
-  aspect-ratio: 2/3;
+
+.description:first-letter {
+  text-transform: uppercase;
 }
 
 .is-done {
   text-decoration: line-through;
   color: gray;
-}
-.is-checked {
-  background-color: rgb(156, 191, 255);
-}
-.todo-state {
-  display: flex;
-  align-items: center;
 }
 .delete {
   position: absolute;
@@ -121,5 +148,46 @@ function changeDoneState() {
   rotate: 45deg;
   color: red;
   font-weight: 600;
+}
+.cancel {
+  top: 0.5px;
+  right: 20px;
+  font-size: 18px;
+  rotate: 45deg;
+  font-weight: 600;
+  color: red;
+}
+.accept {
+  top: 3.5px;
+  right: 40px;
+}
+.exp-stocks {
+  margin: 10px 0;
+}
+.bird {
+  position: absolute;
+  rotate: 40deg;
+  border-bottom: 2px solid black;
+  border-right: 2px solid black;
+  width: 8px;
+  top: 3px;
+  left: 6px;
+  aspect-ratio: 3/4;
+}
+.stock-bird {
+  border-bottom: 3px solid green;
+  border-right: 3px solid green;
+}
+
+.stock-btn {
+  position: absolute;
+  width: 18px;
+  aspect-ratio: 1/1;
+  background-color: transparent;
+  border: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
