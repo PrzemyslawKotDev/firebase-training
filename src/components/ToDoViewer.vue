@@ -7,7 +7,23 @@
         {{ data.description }}
       </div>
       <div v-if="data.amount" class="description">
-        Amonut: {{ data.amount }}
+        <!-- <div class="amount-wrapper">
+          <button
+            v-if="item.amount != newAmount"
+            @click="item.amount = newAmount"
+            class="stock-btn accept"
+          >
+            <div class="stock-bird bird"></div>
+          </button>
+          <button
+            v-if="item.amount != newAmount"
+            @click="newAmount = 0"
+            class="stock-btn cancel"
+          >
+            +
+          </button>
+        </div> -->
+        <div>{{ data.amount }}</div>
       </div>
       <div v-if="data.expectedStocks" class="exp-stocks">
         <button
@@ -49,7 +65,7 @@
 
 <script setup lang="ts">
 import { doc, updateDoc, type DocumentData } from "@firebase/firestore";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import deleteToDo from "@/service/deleteToDo";
 import ImageDisplay from "./ImageDisplay.vue";
 import { db } from "@/service/firebaseConnection";
@@ -102,8 +118,6 @@ function updateExpectedStock() {
     isChecked.value = !isChecked.value;
   }
 }
-
-function checkboxState() {}
 </script>
 
 <style scoped>

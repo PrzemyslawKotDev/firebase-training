@@ -13,8 +13,18 @@
   >
     Restocks
   </button>
+  <div v-if="openedCategory" class="search-filter">
+    <label for="search" class="search-label">Search: </label>
+    <input
+      id="search"
+      name="search"
+      type="text"
+      class="search-input"
+      v-model="search"
+    />
+  </div>
   <ToDoViewer
-    v-for="item in categoryData"
+    v-for="item in dataToDisplay"
     :key="item.id"
     :data="item"
     :category="openedCategory"
@@ -28,7 +38,7 @@
 <script setup lang="ts">
 import ToDoViewer from "../components/ToDoViewer.vue";
 import { db } from "@/service/firebaseConnection";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { collection, getDocs, type DocumentData } from "firebase/firestore";
 import Overlay from "@/components/Overlay.vue";
 import Restock from "@/components/Restock.vue";
@@ -45,6 +55,20 @@ const categoryData = ref<DocumentData[]>([]);
 const openedCategory = ref("");
 const restocks = ref<RestockType[]>([]);
 const isOpenRaport = ref(false);
+const search = ref("");
+
+//szukajka
+const dataToDisplay = computed(() => {
+  if (search.value) {
+    const data: DocumentData[] = [];
+    categoryData.value.forEach((item: DocumentData) => {
+      if (item.name.includes(search.value)) {
+        data.push(item);
+      }
+    });
+    return data;
+  } else return categoryData.value;
+});
 
 //get categories
 getDocs(collection(db, "list")).then((querySnapshot) => {

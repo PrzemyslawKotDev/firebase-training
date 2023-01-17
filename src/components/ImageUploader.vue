@@ -114,6 +114,8 @@ label:focus-within {
 .image-input {
   z-index: -1;
   position: absolute;
+  width: 10px;
+  margin: 20px;
 }
 
 .file-label:after {

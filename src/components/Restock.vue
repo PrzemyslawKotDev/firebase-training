@@ -3,38 +3,14 @@
     <div class="row desc">
       <div class="name">Item name</div>
       <div class="amount">Item amount</div>
-      <div class="is-bought">Mark as bought</div>
     </div>
-    <div v-for="item in restocks" class="row">
+    <div v-for="item in data" class="row">
       <div class="name">{{ item.name }}</div>
 
-      <div v-if="item.amount" class="amount-wrapper">
-        <button
-          v-if="item.amount != newAmount"
-          @click="item.amount = newAmount"
-          class="stock-btn accept"
-        >
-          <div class="stock-bird bird"></div>
-        </button>
-        <button
-          v-if="item.amount != newAmount"
-          @click="newAmount = 0"
-          class="stock-btn cancel"
-        >
-          +
-        </button>
-        <label class="amount">
-          <input v-model="newAmount" />
-          <div class="number">{{ item.amount }}</div>
-        </label>
-      </div>
-
-      <div class="is-bought">
-        <Checkbox :is-checked="isChecked" />
-      </div>
+      <div class="number">{{ item.amount }}</div>
     </div>
     <button class="delete" @click="$emit('closeRestock')">+</button>
-    <button class="accept" @click="acceptRestock">Accept restock</button>
+    <button class="add" @click="acceptRestock">Add to shopping list</button>
   </div>
 </template>
 
@@ -42,45 +18,69 @@
 import {
   collection,
   doc,
+  getDocs,
   setDoc,
+  updateDoc,
   type DocumentData,
 } from "@firebase/firestore";
-import { ref } from "vue";
-import Checkbox from "./Checkbox.vue";
 import { db } from "@/service/firebaseConnection";
+import { ref } from "vue";
 
 type PropsType = {
   data: DocumentData;
 };
 
 const props = defineProps<PropsType>();
-const restocks = ref<DocumentData[]>([...(props.data as [])]);
-const isChecked = ref(false);
-const newAmount = ref(0);
+const listId = ref("");
 
-function acceptRestock(data: DocumentData) {
-  const docRef = doc(collection(db, "list", "shopping", "list"));
-  setDoc(docRef, data);
+function acceptRestock() {
+  let shoppingList: DocumentData[] = [...props.data];
+  let fetchedList: DocumentData[] = [];
+  getDocs(collection(db, "list", "shopping", "list")).then((querySnapshot) => {
+    querySnapshot.forEach((doc) => {
+      const itemData = doc.data();
+      shoppingList.forEach((item) => {
+        if (item.name.toLowerCase() === itemData.name.toLowerCase()) {
+          item.amount = item.amount + itemData.amount;
+          return;
+        } else {
+          fetchedList = [...fetchedList, itemData];
+        }
+      });
+    });
+    console.log(shoppingList);
+    console.log(fetchedList);
+    // shoppingList.value = [...shoppingList.value, ...props.data];
+    // if (listId.value) {
+    //   try {
+    //     updateDoc(doc(db, "list", "shopping", "list", listId.value), {}).then(
+    //       () => {
+    //         initialExpStock.value = expStockNum.value;
+    //       }
+    //     );
+    //   } catch (er) {
+    //     alert("DATA SAVE ERROR");
+    //     console.log(er);
+    //     isChecked.value = !isChecked.value;
+    //   }
+    // }
+    // const docRef = doc(collection(db, "list", "shopping", "list"));
+    // setDoc(docRef, data);
+  });
 }
 </script>
 
 <style scoped>
 .row {
   display: grid;
-  grid-template-columns: 2fr 2fr 2fr;
+  grid-template-columns: 1fr 1fr;
   text-align: center;
 }
 .name {
   padding-right: 10px;
 }
 .number {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
-  padding: 5px;
-  background-color: aliceblue;
-  z-index: 50;
 }
 input:focus ~ div {
   display: none;
@@ -149,5 +149,14 @@ input:focus ~ div {
 .accept {
   top: 8px;
   right: 25px;
+}
+.add {
+  font-size: 20px;
+  width: 100%;
+  border: 1px solid black;
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 10px;
+  background-color: white;
 }
 </style>
