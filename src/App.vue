@@ -7,8 +7,6 @@ import router from "./router";
 import HamburgerMenu from "./components/HamburgerMenu.vue";
 
 // vuequery
-// warianty todos dla pracy, zakupy, relax
-//szukajka po tytułach
 //typy produktów i filtry (radio buttons)
 
 const isLogged = ref(false);

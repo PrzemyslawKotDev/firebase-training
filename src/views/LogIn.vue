@@ -28,14 +28,12 @@ const isSignin = ref(false);
 //login function
 function login() {
   signInWithEmailAndPassword(auth, email.value, password.value)
-    .then((userCredential) => {
+    .then(() => {
       // Signed in
-      const user = userCredential.user;
       router.push("/home");
       // ...
     })
     .catch((error) => {
-      const errorCode = error.code;
       const errorMessage = error.message;
       alert(`CREATE USER ERROR: ${errorMessage}`);
     });

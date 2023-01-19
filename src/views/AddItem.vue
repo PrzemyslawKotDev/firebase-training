@@ -1,8 +1,8 @@
 <template>
   <div class="add-todo">
     <div class="input">
-      <label for="typeOfTodo">Type:</label>
-      <select v-model="todoType" name="typeOfTodo" id="typeOfTodo">
+      <label for="list">List:</label>
+      <select v-model="todoType" name="list" id="list">
         <option value="work">Work</option>
         <option value="house">House</option>
         <option value="shopping">Shopping</option>
@@ -39,6 +39,17 @@
         v-model="dataObj.expectedStocks"
       />
     </div>
+    <div v-if="todoType === 'storage' || todoType === 'shopping'" class="input">
+      <label for="Type">Type:</label>
+      <select v-model="itemType" name="Type" id="Type">
+        <option value="fruits">Fruits</option>
+        <option value="vegetables">Vegetables</option>
+        <option value="dairy">Dairy</option>
+        <option value="Meat">Meat</option>
+        <option value="snacks">Snacks</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
     <ImageUploader ref="imageUploader" @clear-inputs="clearInputs" />
 
     <button class="add-btn" @click="sendToDo">Add to database</button>
@@ -59,6 +70,7 @@ type DataObjType = {
   expectedStocks?: number;
   isDone?: boolean;
   image: string;
+  itemType?: string;
 };
 
 const dataObj = ref<DataObjType>({
@@ -72,6 +84,7 @@ const fileExtension = ref("");
 const imageUploader = ref();
 const isSuccess = ref(false);
 const todoType = ref("work");
+const itemType = ref("");
 
 //build data object and send to database
 async function sendToDo() {
@@ -85,6 +98,9 @@ async function sendToDo() {
   if (todoType.value !== "storage") {
     dataObj.value["isDone"] = false;
   }
+  if (todoType.value === "storage" || todoType.value === "shopping") {
+    dataObj.value["itemType"] = itemType.value;
+  }
 
   setDoc(docRef, dataObj.value);
 }
@@ -95,6 +111,7 @@ function clearInputs() {
   dataObj.value.amount = 0;
   dataObj.value.expectedStocks = 0;
   fileExtension.value = "";
+  itemType.value = "";
   isSuccess.value = true;
   window.setTimeout(() => {
     isSuccess.value = false;

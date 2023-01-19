@@ -7,41 +7,61 @@
     </div>
   </Teleport>
   <button
-    v-if="openedCategory === 'storage'"
+    v-if="openedCategory === 'storage' && filteredData"
     class="restock"
     @click="generateRestockList"
   >
     Restocks
   </button>
-  <div v-if="openedCategory" class="search-filter">
-    <label for="search" class="search-label">Search: </label>
-    <input
-      id="search"
-      name="search"
-      type="text"
-      class="search-input"
-      v-model="search"
+  <div v-if="openedCategory && categoryData.length" class="search-filter">
+    <div class="search-wrapper">
+      <Search @search-value="updateSearch" />
+    </div>
+    <div class="filters-wrapper">
+      <Filters :filters="itemCategories" @filter="updateFilter" />
+    </div>
+  </div>
+
+  <div
+    v-if="openedCategory === 'work' || openedCategory === 'house'"
+    class="todos"
+  >
+    <ToDoRow
+      v-for="item in filteredData"
+      :key="item.id"
+      :data="item"
+      :category="openedCategory"
+      @delete="removeItem"
     />
   </div>
-  <ToDoViewer
-    v-for="item in dataToDisplay"
-    :key="item.id"
-    :data="item"
-    :category="openedCategory"
-    @delete="removeItem"
-  />
+  <div
+    v-if="openedCategory === 'shopping' || openedCategory === 'storage'"
+    class="items"
+  >
+    <ItemRow
+      v-for="item in filteredData"
+      :key="item.id"
+      :data="item"
+      :category="openedCategory"
+      @delete="removeItem"
+    />
+  </div>
+
   <Overlay v-if="isOpenRaport" @click.self="isOpenRaport = false"
     ><Restock :data="restocks" @close-restock="isOpenRaport = false"
   /></Overlay>
 </template>
 
 <script setup lang="ts">
-import ToDoViewer from "../components/ToDoViewer.vue";
+import ToDoRow from "../components/ToDoRow.vue";
+import ItemRow from "../components/ItemRow.vue";
 import { db } from "@/service/firebaseConnection";
 import { ref, computed } from "vue";
 import { collection, getDocs, type DocumentData } from "firebase/firestore";
 import Overlay from "@/components/Overlay.vue";
 import Restock from "@/components/Restock.vue";
+import Filters from "@/components/Filters.vue";
+import Search from "@/components/Search.vue";
 
 type RestockType = {
   amount: number;
@@ -52,24 +72,45 @@ type RestockType = {
 
 const listArray = ref<string[]>([]);
 const categoryData = ref<DocumentData[]>([]);
+const filteredData = ref<DocumentData[]>([]);
+const itemCategories = computed(() => {
+  const categories = categoryData.value.map((item) => {
+    return item.itemType;
+  });
+  const uniqueCategories = [...new Set(categories)];
+  return uniqueCategories;
+});
 const openedCategory = ref("");
 const restocks = ref<RestockType[]>([]);
 const isOpenRaport = ref(false);
 const search = ref("");
+const filter = ref("");
 
 //szukajka
-const dataToDisplay = computed(() => {
+function searchFilter() {
+  filteredData.value = [];
+  let modifiedData: DocumentData[] = [];
+  console.log(search.value);
   if (search.value) {
-    const data: DocumentData[] = [];
     categoryData.value.forEach((item: DocumentData) => {
       if (item.name.includes(search.value)) {
-        data.push(item);
+        modifiedData.push(item);
       }
     });
-    return data;
-  } else return categoryData.value;
-});
-
+    filteredData.value = modifiedData;
+  } else {
+    modifiedData = categoryData.value;
+    filteredData.value = categoryData.value;
+  }
+  if (filter.value) {
+    filteredData.value = [];
+    modifiedData.forEach((item: DocumentData) => {
+      if (item.itemType === filter.value) {
+        filteredData.value.push(item);
+      }
+    });
+  }
+}
 //get categories
 getDocs(collection(db, "list")).then((querySnapshot) => {
   querySnapshot.forEach((doc) => {
@@ -85,6 +126,7 @@ async function getDocData(docName: string) {
     querySnapshot.forEach((doc) => {
       categoryData.value.push({ id: doc.id, ...doc.data() });
     });
+    filteredData.value = categoryData.value;
   });
 }
 
@@ -107,14 +149,19 @@ function generateRestockList() {
     }
   });
 }
+
+function updateFilter(val: string) {
+  filter.value = val;
+  searchFilter();
+}
+
+function updateSearch(val: string) {
+  search.value = val;
+  searchFilter();
+}
 </script>
 
 <style scoped>
-.row {
-  padding: 5px;
-  display: grid;
-  grid-template-columns: 5fr 1fr;
-}
 .todos-display {
   display: flex;
   flex-direction: column;
@@ -150,5 +197,25 @@ function generateRestockList() {
   font-weight: 600;
   cursor: pointer;
   z-index: 51;
+}
+.search-filter {
+  width: 100%;
+  display: flex;
+}
+.search-wrapper {
+  font-size: 20px;
+  width: 40%;
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+  max-width: 300px;
+}
+.search-input {
+  margin-left: 5px;
+  font-size: 20px;
+  width: 100%;
+}
+.filters-wrapper {
+  display: flex;
 }
 </style>

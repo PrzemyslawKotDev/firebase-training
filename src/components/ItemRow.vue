@@ -3,57 +3,22 @@
     <ImageDisplay :image-name="data.image" :alt="`${data.name} image`" />
     <div class="info">
       <div class="title">{{ data.name }}</div>
-      <div v-if="data.description" class="description">
-        {{ data.description }}
+      <div v-if="data.itemType" class="category">
+        <div>Category:</div>
+        <div class="text">{{ data.itemType }}</div>
       </div>
-      <div v-if="data.amount" class="description">
-        <!-- <div class="amount-wrapper">
-          <button
-            v-if="item.amount != newAmount"
-            @click="item.amount = newAmount"
-            class="stock-btn accept"
-          >
-            <div class="stock-bird bird"></div>
-          </button>
-          <button
-            v-if="item.amount != newAmount"
-            @click="newAmount = 0"
-            class="stock-btn cancel"
-          >
-            +
-          </button>
-        </div> -->
-        <div>{{ data.amount }}</div>
-      </div>
-      <div v-if="data.expectedStocks" class="exp-stocks">
-        <button
-          v-if="expStockNum != initialExpStock"
-          @click="updateExpectedStock"
-          class="stock-btn accept"
-        >
-          <div class="stock-bird bird"></div>
-        </button>
-        <button
-          v-if="expStockNum != initialExpStock"
-          @click="expStockNum = initialExpStock"
-          class="stock-btn cancel"
-        >
-          +
-        </button>
-        <label for="expStock">Expected stocks:</label>
-        <input
-          id="expStock"
-          name="expStock"
-          v-model="expStockNum"
-          type="number"
+      <div v-if="data.amount" class="amount">
+        <NumberEdit
+          label="Amount"
+          :num="data.amount"
+          @update-value="updateAmount"
         />
       </div>
-      <div v-else class="todo-state">
-        <Checkbox
-          :is-checked="isChecked"
-          is-loader
-          @clicked-checkbox="changeDoneState"
-          label="Mark as done"
+      <div v-if="data.expectedStocks" class="exp-stocks">
+        <NumberEdit
+          label="Expected stocks"
+          :num="data.expectedStocks"
+          @update-value="updateExpStock"
         />
       </div>
     </div>
@@ -65,11 +30,11 @@
 
 <script setup lang="ts">
 import { doc, updateDoc, type DocumentData } from "@firebase/firestore";
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import deleteToDo from "@/service/deleteToDo";
 import ImageDisplay from "./ImageDisplay.vue";
 import { db } from "@/service/firebaseConnection";
-import Checkbox from "./Checkbox.vue";
+import NumberEdit from "@/components/NumberEdit.vue";
 
 type PropsType = {
   data: DocumentData;
@@ -91,6 +56,28 @@ function changeDoneState() {
     alert("DATA SAVE ERROR");
     console.log(er);
     isChecked.value = !isChecked.value;
+  }
+}
+
+function updateAmount(newValue: number) {
+  try {
+    updateDoc(doc(db, "list", props.category, "list", props.data.id), {
+      amount: newValue,
+    }).then(() => {});
+  } catch (er) {
+    alert("DATA SAVE ERROR");
+    console.log(er);
+  }
+}
+
+function updateExpStock(newValue: number) {
+  try {
+    updateDoc(doc(db, "list", props.category, "list", props.data.id), {
+      expectedStocks: newValue,
+    }).then(() => {});
+  } catch (er) {
+    alert("DATA SAVE ERROR");
+    console.log(er);
   }
 }
 
@@ -121,9 +108,6 @@ function updateExpectedStock() {
 </script>
 
 <style scoped>
-#expStock {
-  width: 80px;
-}
 .todo-bar {
   border-radius: 10px;
   padding: 10px;
@@ -139,12 +123,14 @@ function updateExpectedStock() {
 .title:first-letter {
   text-transform: uppercase;
 }
-.description {
-  padding: 10px 0;
-  font-size: 25px;
+.category {
+  font-size: 22px;
+  display: flex;
 }
-
-.description:first-letter {
+.text {
+  padding-left: 5px;
+}
+.text:first-letter {
   text-transform: uppercase;
 }
 
@@ -162,46 +148,5 @@ function updateExpectedStock() {
   rotate: 45deg;
   color: red;
   font-weight: 600;
-}
-.cancel {
-  top: 0.5px;
-  right: 20px;
-  font-size: 18px;
-  rotate: 45deg;
-  font-weight: 600;
-  color: red;
-}
-.accept {
-  top: 3.5px;
-  right: 40px;
-}
-.exp-stocks {
-  margin: 10px 0;
-}
-.bird {
-  position: absolute;
-  rotate: 40deg;
-  border-bottom: 2px solid black;
-  border-right: 2px solid black;
-  width: 8px;
-  top: 3px;
-  left: 6px;
-  aspect-ratio: 3/4;
-}
-.stock-bird {
-  border-bottom: 3px solid green;
-  border-right: 3px solid green;
-}
-
-.stock-btn {
-  position: absolute;
-  width: 18px;
-  aspect-ratio: 1/1;
-  background-color: transparent;
-  border: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 </style>
