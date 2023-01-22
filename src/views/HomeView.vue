@@ -17,7 +17,7 @@
     <div class="search-wrapper">
       <Search @search-value="updateSearch" />
     </div>
-    <div class="filters-wrapper">
+    <div class="filters-wrapper" v-if="itemCategories.length > 1">
       <Filters :filters="itemCategories" @filter="updateFilter" />
     </div>
   </div>
@@ -27,7 +27,7 @@
     class="todos"
   >
     <ToDoRow
-      v-for="item in filteredData"
+      v-for="item in categoryData"
       :key="item.id"
       :data="item"
       :category="openedCategory"
@@ -63,25 +63,22 @@ import Restock from "@/components/Restock.vue";
 import Filters from "@/components/Filters.vue";
 import Search from "@/components/Search.vue";
 
-type RestockType = {
-  amount: number;
-  image: any;
-  name: any;
-  isDone: boolean;
-};
-
 const listArray = ref<string[]>([]);
 const categoryData = ref<DocumentData[]>([]);
 const filteredData = ref<DocumentData[]>([]);
 const itemCategories = computed(() => {
-  const categories = categoryData.value.map((item) => {
+  const categories = filteredData.value.map((item) => {
     return item.itemType;
   });
-  const uniqueCategories = [...new Set(categories)];
-  return uniqueCategories;
+  if (categories) {
+    const uniqueCategories = [...new Set(categories)];
+    return uniqueCategories;
+  } else {
+    return [];
+  }
 });
 const openedCategory = ref("");
-const restocks = ref<RestockType[]>([]);
+const restocks = ref<DocumentData[]>([]);
 const isOpenRaport = ref(false);
 const search = ref("");
 const filter = ref("");
@@ -93,7 +90,7 @@ function searchFilter() {
   console.log(search.value);
   if (search.value) {
     categoryData.value.forEach((item: DocumentData) => {
-      if (item.name.includes(search.value)) {
+      if (item.name.toUpperCase().includes(search.value.toUpperCase())) {
         modifiedData.push(item);
       }
     });
@@ -132,6 +129,7 @@ async function getDocData(docName: string) {
 
 function removeItem(id: string) {
   categoryData.value = categoryData.value.filter((obj) => obj.id !== id);
+  searchFilter();
 }
 
 function generateRestockList() {
@@ -140,10 +138,8 @@ function generateRestockList() {
   categoryData.value.forEach((item) => {
     if (item.amount < item.expectedStocks) {
       const dataObj = {
+        ...item,
         amount: item.expectedStocks - item.amount,
-        image: item.image,
-        name: item.name,
-        isDone: false,
       };
       restocks.value.push(dataObj);
     }
@@ -200,22 +196,14 @@ function updateSearch(val: string) {
 }
 .search-filter {
   width: 100%;
-  display: flex;
 }
 .search-wrapper {
   font-size: 20px;
-  width: 40%;
   display: flex;
   align-items: center;
-  margin-right: 10px;
-  max-width: 300px;
-}
-.search-input {
-  margin-left: 5px;
-  font-size: 20px;
-  width: 100%;
 }
 .filters-wrapper {
+  padding-top: 10px;
   display: flex;
 }
 </style>

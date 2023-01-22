@@ -17,4 +17,10 @@ const search = ref("");
 defineEmits(["searchValue"]);
 </script>
 
-<style scoped></style>
+<style scoped>
+.search-input {
+  margin-left: 5px;
+  font-size: 20px;
+  width: 100%;
+}
+</style>

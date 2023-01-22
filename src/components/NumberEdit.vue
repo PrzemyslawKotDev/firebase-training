@@ -69,7 +69,7 @@ function handleDecision(change: boolean) {
   width: 100%;
   height: 100%;
   display: flex;
-  padding: 5px;
+  padding: 5px 0;
 }
 .edit-btn {
   font-size: 20px;
@@ -80,6 +80,7 @@ function handleDecision(change: boolean) {
   display: flex;
   align-items: center;
   height: 30px;
+  color: inherit;
 }
 .edit-label {
   padding-right: 5px;

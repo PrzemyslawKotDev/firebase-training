@@ -17,55 +17,57 @@
 <script setup lang="ts">
 import {
   collection,
+  deleteDoc,
   doc,
   getDocs,
   setDoc,
-  updateDoc,
   type DocumentData,
 } from "@firebase/firestore";
 import { db } from "@/service/firebaseConnection";
 import { ref } from "vue";
 
 type PropsType = {
-  data: DocumentData;
+  data: DocumentData[];
 };
 
 const props = defineProps<PropsType>();
-const listId = ref("");
+const shoppingData = ref<DocumentData[]>([]);
+const newList = ref<DocumentData[]>([]);
+
+getDocs(collection(db, "list", "shopping", "list")).then((querySnapshot) => {
+  querySnapshot.forEach((doc) => {
+    shoppingData.value.push({ ...doc.data(), storageId: doc.id });
+  });
+});
 
 function acceptRestock() {
-  let shoppingList: DocumentData[] = [...props.data];
-  let fetchedList: DocumentData[] = [];
-  getDocs(collection(db, "list", "shopping", "list")).then((querySnapshot) => {
-    querySnapshot.forEach((doc) => {
-      const itemData = doc.data();
-      shoppingList.forEach((item) => {
-        if (item.name.toLowerCase() === itemData.name.toLowerCase()) {
-          item.amount = item.amount + itemData.amount;
-          return;
+  const mergedLists: DocumentData[] = [];
+
+  if (shoppingData.value.length) {
+    props.data.forEach((restock: DocumentData) => {
+      shoppingData.value.forEach((item) => {
+        if (item.name === restock.name && item.amount > restock.amount) {
+          mergedLists.push(item);
         } else {
-          fetchedList = [...fetchedList, itemData];
+          if (!mergedLists.includes(restock)) {
+            mergedLists.push(restock);
+          }
         }
       });
     });
-    console.log(shoppingList);
-    console.log(fetchedList);
-    // shoppingList.value = [...shoppingList.value, ...props.data];
-    // if (listId.value) {
-    //   try {
-    //     updateDoc(doc(db, "list", "shopping", "list", listId.value), {}).then(
-    //       () => {
-    //         initialExpStock.value = expStockNum.value;
-    //       }
-    //     );
-    //   } catch (er) {
-    //     alert("DATA SAVE ERROR");
-    //     console.log(er);
-    //     isChecked.value = !isChecked.value;
-    //   }
-    // }
-    // const docRef = doc(collection(db, "list", "shopping", "list"));
-    // setDoc(docRef, data);
+
+    newList.value = [...new Set(mergedLists)];
+  } else {
+    newList.value = props.data;
+  }
+  console.log(newList.value);
+  newList.value.forEach((item) => {
+    const docRef = doc(collection(db, "list", "shopping", "list"));
+    setDoc(docRef, { ...item, id: docRef.id });
+  });
+  // JEŚLI WCZEŚNIEJSZY BLOK OK TO WTEDY WYKONAJ TEN BLOK
+  shoppingData.value.forEach((item) => {
+    deleteDoc(doc(db, "list", "shopping", "list", item.id));
   });
 }
 </script>

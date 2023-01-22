@@ -1,6 +1,9 @@
 <template>
-  <div :class="{ 'is-done': isChecked }" class="todo-bar">
-    <ImageDisplay :image-name="data.image" :alt="`${data.name} image`" />
+  <div v-if="data" :class="{ 'is-done': isChecked }" class="todo-bar">
+    <ImageDisplay
+      :image-name="`${data.storageRef}.png`"
+      :alt="`${data.name} image`"
+    />
     <div class="info">
       <div class="title">{{ data.name }}</div>
       <div v-if="data.itemType" class="category">
@@ -14,11 +17,22 @@
           @update-value="updateAmount"
         />
       </div>
-      <div v-if="data.expectedStocks" class="exp-stocks">
+      <div
+        v-if="data.expectedStocks && category === 'storage'"
+        class="exp-stocks"
+      >
         <NumberEdit
           label="Expected stocks"
           :num="data.expectedStocks"
           @update-value="updateExpStock"
+        />
+      </div>
+      <div v-if="category === 'shopping'" class="bought-state">
+        <Checkbox
+          :is-checked="isChecked"
+          is-loader
+          @clicked-checkbox="changeDoneState"
+          label="Mark as bought"
         />
       </div>
     </div>
@@ -35,6 +49,7 @@ import deleteToDo from "@/service/deleteToDo";
 import ImageDisplay from "./ImageDisplay.vue";
 import { db } from "@/service/firebaseConnection";
 import NumberEdit from "@/components/NumberEdit.vue";
+import Checkbox from "./Checkbox.vue";
 
 type PropsType = {
   data: DocumentData;
@@ -148,5 +163,9 @@ function updateExpectedStock() {
   rotate: 45deg;
   color: red;
   font-weight: 600;
+}
+.bought-state {
+  display: flex;
+  justify-content: flex-start;
 }
 </style>

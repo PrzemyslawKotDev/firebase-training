@@ -17,11 +17,10 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-
 type PropsType = {
   filters: string[];
 };
-defineProps<PropsType>();
+const props = defineProps<PropsType>();
 const emit = defineEmits(["filter"]);
 const filter = ref("");
 

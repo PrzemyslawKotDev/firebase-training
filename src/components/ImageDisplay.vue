@@ -7,7 +7,7 @@
 <script setup lang="ts">
 import getFileRef from "@/service/getFileRef";
 import { getDownloadURL } from "@firebase/storage";
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 
 type PropsType = {
   imageName: string;
@@ -15,10 +15,11 @@ type PropsType = {
 };
 const props = defineProps<PropsType>();
 const itemImage = ref();
-const imageUrl = getDownloadURL(getFileRef("images", props.imageName));
 
-imageUrl.then((item) => {
-  itemImage.value.setAttribute("src", item);
+onMounted(() => {
+  getDownloadURL(getFileRef("images", props.imageName)).then((item) => {
+    itemImage.value.setAttribute("src", item);
+  });
 });
 </script>
 
