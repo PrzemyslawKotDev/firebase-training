@@ -1,9 +1,6 @@
 <template>
   <div v-if="data" :class="{ 'is-done': isChecked }" class="todo-bar">
-    <ImageDisplay
-      :image-name="`${data.storageRef}.png`"
-      :alt="`${data.name} image`"
-    />
+    <ImageDisplay :image-name="data.storageRef" :alt="`${data.name} image`" />
     <div class="info">
       <div class="title">{{ data.name }}</div>
       <div v-if="data.itemType" class="category">
@@ -57,16 +54,21 @@ type PropsType = {
 };
 const props = defineProps<PropsType>();
 const isChecked = ref(props.data.isDone);
-const emit = defineEmits(["delete"]);
-const initialExpStock = ref(props.data.expectedStocks);
-const expStockNum = ref(props.data.expectedStocks);
+const emit = defineEmits([
+  "delete",
+  "isChecked",
+  "updateAmount",
+  "updateExpStock",
+]);
 
 function changeDoneState() {
   isChecked.value = !isChecked.value;
   try {
     updateDoc(doc(db, "list", props.category, "list", props.data.id), {
       isDone: isChecked.value,
-    }).then(() => {});
+    }).then(() => {
+      emit("isChecked", props.data.id);
+    });
   } catch (er) {
     alert("DATA SAVE ERROR");
     console.log(er);
@@ -78,7 +80,9 @@ function updateAmount(newValue: number) {
   try {
     updateDoc(doc(db, "list", props.category, "list", props.data.id), {
       amount: newValue,
-    }).then(() => {});
+    }).then(() => {
+      emit("updateAmount", { ...props.data, amount: newValue });
+    });
   } catch (er) {
     alert("DATA SAVE ERROR");
     console.log(er);
@@ -89,7 +93,12 @@ function updateExpStock(newValue: number) {
   try {
     updateDoc(doc(db, "list", props.category, "list", props.data.id), {
       expectedStocks: newValue,
-    }).then(() => {});
+    }).then(() => {
+      emit("updateExpStock", {
+        ...props.data,
+        expectedStocks: newValue,
+      });
+    });
   } catch (er) {
     alert("DATA SAVE ERROR");
     console.log(er);
@@ -104,20 +113,6 @@ function handleDelete(category: string, id: string, img: string) {
   const isDeleted = deleteToDo(category, id, image);
   if (isDeleted) {
     emit("delete", id);
-  }
-}
-
-function updateExpectedStock() {
-  try {
-    updateDoc(doc(db, "list", props.category, "list", props.data.id), {
-      expectedStocks: expStockNum.value,
-    }).then(() => {
-      initialExpStock.value = expStockNum.value;
-    });
-  } catch (er) {
-    alert("DATA SAVE ERROR");
-    console.log(er);
-    isChecked.value = !isChecked.value;
   }
 }
 </script>

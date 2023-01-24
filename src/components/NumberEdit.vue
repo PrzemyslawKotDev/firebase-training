@@ -49,7 +49,7 @@ const width = computed(() => {
 function handleDecision(change: boolean) {
   if (change) {
     amount.value = newValue.value;
-    emit("updateValue");
+    emit("updateValue", newValue.value);
   } else {
     newValue.value = amount.value;
   }

@@ -13,12 +13,23 @@
   >
     Restocks
   </button>
+  <button
+    v-if="openedCategory === 'shopping' && filteredData"
+    class="restock"
+    @click="addToStorage"
+  >
+    Resolve bought
+  </button>
   <div v-if="openedCategory && categoryData.length" class="search-filter">
     <div class="search-wrapper">
       <Search @search-value="updateSearch" />
     </div>
-    <div class="filters-wrapper" v-if="itemCategories.length > 1">
-      <Filters :filters="itemCategories" @filter="updateFilter" />
+    <div class="filters-wrapper">
+      <Filters
+        v-if="openedCategory === 'shopping' || openedCategory === 'storage'"
+        :filters="itemCategories"
+        @filter="updateFilter"
+      />
     </div>
   </div>
 
@@ -44,12 +55,15 @@
       :data="item"
       :category="openedCategory"
       @delete="removeItem"
+      @is-checked="handleIsDone"
+      @update-amount="updateAmount"
+      @update-exp-stock="updateExpStock"
     />
   </div>
 
-  <Overlay v-if="isOpenRaport" @click.self="isOpenRaport = false"
-    ><Restock :data="restocks" @close-restock="isOpenRaport = false"
-  /></Overlay>
+  <Overlay v-if="isOpenRaport" @click.self="isOpenRaport = false">
+    <Restock :data="restocks" @close-restock="isOpenRaport = false" />
+  </Overlay>
 </template>
 
 <script setup lang="ts">
@@ -57,7 +71,16 @@ import ToDoRow from "../components/ToDoRow.vue";
 import ItemRow from "../components/ItemRow.vue";
 import { db } from "@/service/firebaseConnection";
 import { ref, computed } from "vue";
-import { collection, getDocs, type DocumentData } from "firebase/firestore";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  type DocumentData,
+} from "firebase/firestore";
 import Overlay from "@/components/Overlay.vue";
 import Restock from "@/components/Restock.vue";
 import Filters from "@/components/Filters.vue";
@@ -87,7 +110,6 @@ const filter = ref("");
 function searchFilter() {
   filteredData.value = [];
   let modifiedData: DocumentData[] = [];
-  console.log(search.value);
   if (search.value) {
     categoryData.value.forEach((item: DocumentData) => {
       if (item.name.toUpperCase().includes(search.value.toUpperCase())) {
@@ -154,6 +176,40 @@ function updateFilter(val: string) {
 function updateSearch(val: string) {
   search.value = val;
   searchFilter();
+}
+
+function addToStorage() {
+  if (openedCategory.value === "shopping") {
+    setDoc(doc(collection(db, "list", "orders", "list")), {
+      timestamp: new Date(),
+      order: filteredData.value,
+    });
+    filteredData.value.forEach(async (item, index) => {
+      if (item.isDone) {
+        const itemRef = doc(db, "list", "storage", "list", item.storageRef);
+        const data = (await getDoc(itemRef)).data();
+        updateDoc(itemRef, { amount: item.amount + data?.amount }).then(() => {
+          deleteDoc(doc(db, "list", "shopping", "list", item.id)).then(() => {
+            filteredData.value.splice(index, 1);
+          });
+        });
+      }
+    });
+  }
+}
+
+function handleIsDone(id: string) {
+  const objIndex = categoryData.value.findIndex((obj) => obj.id == id);
+
+  categoryData.value[objIndex].isDone = !categoryData.value[objIndex].isDone;
+}
+
+function updateAmount(info: object) {
+  console.log(info);
+}
+
+function updateExpStock(info: object) {
+  console.log(info);
 }
 </script>
 

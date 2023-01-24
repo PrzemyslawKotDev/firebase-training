@@ -1,6 +1,6 @@
 <template>
   <div :class="{ 'is-done': isChecked }" class="todo-bar">
-    <ImageDisplay :image-name="data.image" :alt="`${data.name} image`" />
+    <ImageDisplay :image-name="data.storageRef" :alt="`${data.name} image`" />
     <div class="info">
       <div class="title">{{ data.name }}</div>
       <div class="description">
@@ -52,9 +52,6 @@ function changeDoneState() {
 
 function handleDelete(category: string, id: string, img: string) {
   let image: string | boolean = img;
-  if (props.category === "shopping") {
-    image = false;
-  }
   const isDeleted = deleteToDo(category, id, image);
   if (isDeleted) {
     emit("delete", id);

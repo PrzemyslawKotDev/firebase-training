@@ -33,7 +33,7 @@
         id="description"
         name="description"
         type="number"
-        v-model="dataObj.amount"
+        v-model="amount"
       />
     </div>
     <div v-if="todoType === 'storage'" class="input">
@@ -42,7 +42,7 @@
         id="description"
         name="description"
         type="number"
-        v-model="dataObj.expectedStocks"
+        v-model="expectedStocks"
       />
     </div>
     <div v-if="todoType === 'storage'" class="input">
@@ -91,8 +91,6 @@ type DataObjType = {
 
 const dataObj = ref<DataObjType>({
   name: "",
-  amount: 0,
-  expectedStocks: 0,
   isDone: false,
 });
 const fileExtension = ref("");
@@ -101,6 +99,8 @@ const isSuccess = ref(false);
 const todoType = ref("work");
 const itemType = ref("");
 const description = ref("");
+const amount = ref(0);
+const expectedStocks = ref(0);
 const shoppingItems = ref<DocumentData>([]);
 
 //build data object and send to database
@@ -111,27 +111,30 @@ async function sendToDo() {
   if (todoType.value === "shopping") {
     shoppingItems.value.forEach((item: DataObjType) => {
       if (item.name === dataObj.value.name) {
-        const amount = dataObj.value.amount;
-        dataObj.value = { ...item, amount: amount };
+        console.log(item);
+        dataObj.value = { ...item, amount: amount.value };
       }
     });
   } else {
     dataObj.value.name =
       dataObj.value.name.charAt(0).toUpperCase() + dataObj.value.name.slice(1);
 
-    if (todoType.value === "storage") {
-      dataObj.value["storageRef"] = docRef.id;
-    }
+    dataObj.value["storageRef"] = docRef.id;
+
     if (todoType.value === "storage" || todoType.value === "shopping") {
       dataObj.value["itemType"] = itemType.value;
+      dataObj.value["amount"] = amount.value;
+      dataObj.value["expectedStocks"] = expectedStocks.value;
     }
     if (todoType.value === "work" || todoType.value === "house") {
       dataObj.value["description"] = description.value;
     }
   }
 
-  //use of exposed function from child
-  imageUploader.value.sendFile(imgName);
+  if (todoType.value !== "shopping") {
+    //use of exposed function from child
+    imageUploader.value.sendFile(imgName);
+  }
 
   setDoc(docRef, dataObj.value).then(() => {
     if (todoType.value === "shopping") {
@@ -142,6 +145,7 @@ async function sendToDo() {
 
 function clearInputs() {
   dataObj.value.name = "";
+  dataObj.value.description = "";
   dataObj.value.amount = 0;
   dataObj.value.expectedStocks = 0;
   fileExtension.value = "";

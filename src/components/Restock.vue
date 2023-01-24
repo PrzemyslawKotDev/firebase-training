@@ -21,6 +21,7 @@ import {
   doc,
   getDocs,
   setDoc,
+  updateDoc,
   type DocumentData,
 } from "@firebase/firestore";
 import { db } from "@/service/firebaseConnection";
@@ -36,38 +37,46 @@ const newList = ref<DocumentData[]>([]);
 
 getDocs(collection(db, "list", "shopping", "list")).then((querySnapshot) => {
   querySnapshot.forEach((doc) => {
-    shoppingData.value.push({ ...doc.data(), storageId: doc.id });
+    shoppingData.value.push(doc.data());
   });
 });
 
+// PORÓWNAJ ITEMY W DWÓCH TABLICACH ORAZ JEŚLI
+// JEST JUZ OBJEKT O TAKIEJ NAZWIE TO PORÓWNAJ JEGO WARTOŚĆ I WRZUĆ TEN Z WIĘKSZĄ
+// JEŚLI NIE MA TO WRZUĆ NOWĄ WARTOŚĆ
 function acceptRestock() {
-  const mergedLists: DocumentData[] = [];
-
+  newList.value = [...props.data];
+  const indexes: number[] = [];
   if (shoppingData.value.length) {
-    props.data.forEach((restock: DocumentData) => {
-      shoppingData.value.forEach((item) => {
-        if (item.name === restock.name && item.amount > restock.amount) {
-          mergedLists.push(item);
-        } else {
-          if (!mergedLists.includes(restock)) {
-            mergedLists.push(restock);
-          }
-        }
+    shoppingData.value.forEach((shopItem: DocumentData) => {
+      const objIndex = props.data.findIndex((restock) => {
+        return shopItem.name.toUpperCase() == restock.name.toUpperCase();
       });
+
+      if (objIndex > -1) {
+        if (shopItem.amount < props.data[objIndex].amount) {
+          const itemRef = doc(
+            db,
+            "list",
+            "storage",
+            "list",
+            shoppingData.value[objIndex].id
+          );
+
+          updateDoc(itemRef, { amount: props.data[objIndex].amount });
+        }
+        indexes.push(objIndex);
+      }
     });
 
-    newList.value = [...new Set(mergedLists)];
-  } else {
-    newList.value = props.data;
+    indexes.sort((a, b) => b - a);
+    indexes.forEach((index) => {
+      newList.value.splice(index, 1);
+    });
   }
-  console.log(newList.value);
   newList.value.forEach((item) => {
     const docRef = doc(collection(db, "list", "shopping", "list"));
     setDoc(docRef, { ...item, id: docRef.id });
-  });
-  // JEŚLI WCZEŚNIEJSZY BLOK OK TO WTEDY WYKONAJ TEN BLOK
-  shoppingData.value.forEach((item) => {
-    deleteDoc(doc(db, "list", "shopping", "list", item.id));
   });
 }
 </script>

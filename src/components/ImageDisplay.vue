@@ -17,9 +17,11 @@ const props = defineProps<PropsType>();
 const itemImage = ref();
 
 onMounted(() => {
-  getDownloadURL(getFileRef("images", props.imageName)).then((item) => {
-    itemImage.value.setAttribute("src", item);
-  });
+  getDownloadURL(getFileRef("images", `${props.imageName}.png`)).then(
+    (item) => {
+      itemImage.value.setAttribute("src", item);
+    }
+  );
 });
 </script>
 
